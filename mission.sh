@@ -1,5 +1,6 @@
 #!/bin/sh
 
+echo ">> Run Timestamp: $(date -Iseconds)"
 echo ""
 echo "╔══════════════════════════════════════════╗"
 echo "║   MISSION: SYSTEM DEPLOYMENT v1.0       ║"
