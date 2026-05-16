@@ -19,6 +19,7 @@ k8s-mission-deploy/
 ├── mission.sh          # The core mission script
 ├── providers.tf        # Terraform provider configuration (Docker Desktop context)
 └── main.tf             # Kubernetes Job definition & Security Contexts
+```
 
 
 ## Security Practices
@@ -34,6 +35,7 @@ This project applies production-grade container security:
 ## What It Does
 
 The container runs a bash script that simulates a deployment mission sequence while reporting real system information (hostname, OS, memory, disk, network). When deployed to Kubernetes, the Job runs to completion and the logs can be inspected with kubectl.
+
 
 ## How to Run
 
