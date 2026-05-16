@@ -5,7 +5,7 @@ A security-hardened containerized deployment-simulator deployed to a local Kuber
 ## Technologies Used
 
 - **Docker** - Containerization of a Linux bash script with non-root user
-- **Kubernetes** - Orchestration via a local cluster (Docker Desktop)
+- **Kubernetes** - Orchestration via a local cluster, utilizing **Jobs** for single executions and **CronJobs** for scheduled tasks.
 - **Terraform** - Infrastructure as Code to deploy the K8s Job
 - **Alpine Linux** - Lightweight container base image
 
@@ -18,7 +18,7 @@ k8s-mission-deploy/
 ├── Dockerfile          # Builds the non-root Alpine image
 ├── mission.sh          # The core mission script
 ├── providers.tf        # Terraform provider configuration (Docker Desktop context)
-└── main.tf             # Kubernetes Job definition & Security Contexts
+└── main.tf             # Kubernetes Job & CronJob definitions with Security Contexts
 ```
 
 
@@ -60,17 +60,24 @@ terraform plan
 terraform apply
 ```
 
-3. Check the logs:
+3. Check the CronJob and active execution logs:
 
 ```bash
-kubectl get pods
-kubectl logs <pod-name>
+# Verify the CronJob is created and check its schedule
+kubectl get cronjobs
+
+# Watch the pods being created every 2 minutes
+kubectl get pods --watch
+
+# Check the logs of the latest completed job
+kubectl logs <pod-name-generated-by-cronjob>
 ```
 
-4. Verify security context:
+4. Verify the active runtime Security Context (PowerShell / Windows)
 
 ```bash
 kubectl get pod <pod-name> -o yaml | Select-String -Pattern "securityContext" -Context 0, 6
+kubectl get cronjob mission-deploy-cronjob -o yaml | Select-String -Pattern "securityContext" -Context 0, 6
 ```
 
 5. Clean up:
@@ -82,6 +89,8 @@ terraform destroy
 ## Sample Output
 
 ```
+>>Run Timestamp: 2026-05-16T16:04:02+00:00
+
 ╔══════════════════════════════════════════╗
 ║    MISSION: SYSTEM DEPLOYMENT v1.0       ║
 ╚══════════════════════════════════════════╝
@@ -118,17 +127,20 @@ terraform destroy
 
 ## Architecture
 
-```
-[mission.sh] --> [Docker Image] --> [Kubernetes Job] --> [Pod runs to completion]
-                      |                    |
-              (non-root user)     (security context:
-                                   read-only fs,
-                                   drop ALL caps,
-                                   resource limits)
-                                         ^
-                                         |
-                                   [Terraform apply]
-                                   (providers.tf + main.tf)
+## Architecture
+
+```text
+[mission.sh] --> [Docker Image] ──> [Kubernetes Job] ────> [Pod runs once to completion]
+                      |        └──> [Kubernetes CronJob] ──> [Generates Pods every 2 min]
+                      |                      |
+               (non-root user)       (security context:
+                                      read-only fs,
+                                      drop ALL caps,
+                                      resource limits)
+                                             ^
+                                             |
+                                     [Terraform apply]
+                                      (providers.tf + main.tf)
 ```
 
 ## Author
